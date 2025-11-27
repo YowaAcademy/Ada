@@ -1,29 +1,24 @@
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args); // 1.Aşama
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
 
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+var app = builder.Build();// 2.Aşama
+
+
+app.UseSwagger();
+
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+
+app.UseAuthorization();
+
 app.MapControllers();
 
-app.Run();
-
-/*
-
-Model
-JSON
-Controller
-
-
-*/
+app.Run(); //3.Aşama
