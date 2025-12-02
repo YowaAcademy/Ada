@@ -12,10 +12,12 @@ namespace EShopApp.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly ILogger<ProductsController> _logger;
 
-        public ProductsController(IProductService productService)
+        public ProductsController(IProductService productService, ILogger<ProductsController> logger)
         {
             _productService = productService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -34,7 +36,8 @@ namespace EShopApp.Controllers
             return Ok(products);
         }
 
-        [HttpGet("by-category/{category}")]
+        // [HttpGet("by-category/{category:regex()}")]
+        [HttpGet("by-category/{category:alpha}")]
         public IActionResult GetProductsByCategory(string category)
         {
             var products = _productService.GetProductsByCategory(category);
@@ -45,12 +48,15 @@ namespace EShopApp.Controllers
             return Ok(products);
         }
 
-        [HttpGet("{id}")]
+        // [HttpGet("{id:int:min(1)}")]
+        [HttpGet("{id:int:range(1,1000)}")]
         public IActionResult GetById(int id)
         {
+            _logger.LogInformation($"GetById action metodu çağrıldı: [ProductId]: {id}");
             var product = _productService.GetById(id);
             if (product is null)
             {
+                _logger.LogWarning($"Ürün bulunamadı: [ProductId]: {id}");
                 return NotFound(new { message = $"{id} id'li ürün bulunamadı!" });
             }
             return Ok(product);
@@ -133,7 +139,31 @@ namespace EShopApp.Controllers
             [FromQuery] int? minStock
             )
         {
-            
+            var products = _productService.GetAll();
+            if (!string.IsNullOrEmpty(category))
+            {
+                products = products.Where(p => p.Category == category).ToList();
+            }
+
+            if (minPrice.HasValue)
+            {
+                products = products.Where(p => p.Price >= minPrice.Value).ToList();
+            }
+
+            if (maxPrice.HasValue)
+            {
+                products = products.Where(p => p.Price <= maxPrice.Value).ToList();
+            }
+
+            if (minStock.HasValue)
+            {
+                products = products.Where(p => p.Stock >= minStock.Value).ToList();
+            }
+            if (products.Count == 0)
+            {
+                return NotFound(new { message = "Belirtilen kriterlere uygun hiç ürün bulunamadı!" });
+            }
+            return Ok(products);
         }
     }
 }

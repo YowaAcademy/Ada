@@ -1,21 +1,31 @@
+using System.Text;
 using EShopApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapGet("/debug/routes", (IEnumerable<EndpointDataSource> endpointDataSources) =>
+    {
+        var sb = new StringBuilder();
+        var endpoints = endpointDataSources.SelectMany(eds => eds.Endpoints);
+        foreach (var endpoint in endpoints)
+        {
+            if(endpoint is RouteEndpoint routeEndpoint)
+            {
+                sb.AppendLine($"{routeEndpoint.RoutePattern.RawText}");
+            }
+        }
+        return sb.ToString();
+    });
 }
 
 app.UseHttpsRedirection();
