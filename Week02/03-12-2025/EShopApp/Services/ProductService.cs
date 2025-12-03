@@ -44,6 +44,16 @@ public class ProductService : IProductService
         return product;
     }
 
+    public bool CheckStockAvailability(int id, int requestedQuantity)
+    {
+        var product = _products.FirstOrDefault(p => p.Id == id);
+        if (product is null)
+        {
+            return false;
+        }
+        return product.Stock>=requestedQuantity;
+    }
+
     public bool Delete(int id)
     {
         var product = _products.FirstOrDefault(p => p.Id == id);
@@ -89,5 +99,21 @@ public class ProductService : IProductService
         existingProduct.Category = product.Category;
 
         return existingProduct;
+    }
+
+    public Product? UpdateStock(int id, int quantityChange)
+    {
+        var product = _products.FirstOrDefault(x=>x.Id==id);
+        if(product is null)
+        {
+            return null;
+        }
+        var newStock = product.Stock + quantityChange;
+        if(newStock<0)
+        {
+            throw new InvalidOperationException($"Stok yetersiz! Mevcut Stok: {product.Stock}, İstenen: {quantityChange}");
+        }
+        product.Stock=newStock;
+        return product;
     }
 }

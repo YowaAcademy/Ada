@@ -12,5 +12,7 @@ public interface IProductService
     bool Delete(int id);
     List<Product> GetLowStockProducts(int threshold);
     List<Product> GetProductsByCategory(string category);
+    Product? UpdateStock(int id, int quantityChange);
+    bool CheckStockAvailability(int id, int requestedQuantity);
     
 }

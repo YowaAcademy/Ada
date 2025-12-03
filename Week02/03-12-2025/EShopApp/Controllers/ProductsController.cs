@@ -1,6 +1,7 @@
+using System.Text.Json;
+using System.Threading.Tasks;
 using EShopApp.Models;
 using EShopApp.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EShopApp.Controllers
@@ -52,8 +53,8 @@ namespace EShopApp.Controllers
 
 
         // GET: api/products/5
-        [HttpGet("{id}", Name="GetProductById")]
-        public ActionResult<Product> GetById(int id)
+        [HttpGet("{id}", Name = "GetProductById")]
+        public ActionResult<Product> GetById([FromRoute] int id)
         {
             _logger.LogInformation($"GetById action metodu çağrıldı: [ProductId]: {id}");
             var product = _productService.GetById(id);
@@ -65,11 +66,11 @@ namespace EShopApp.Controllers
             return Ok(product);
         }
 
-
         // POST: api/products
         [HttpPost]
         public ActionResult<Product> Create([FromBody] Product product)
         {
+
             if (product is null)
             {
                 return BadRequest(new { message = "Ürün bilgisi boş olamaz!" });
@@ -88,7 +89,7 @@ namespace EShopApp.Controllers
             }
             var newProduct = _productService.Add(product);
 
-            return CreatedAtRoute("GetProductById", new {id=newProduct.Id}, newProduct);
+            return CreatedAtRoute("GetProductById", new { id = newProduct.Id }, newProduct);
         }
 
 
@@ -175,9 +176,86 @@ namespace EShopApp.Controllers
             }
             return Ok(products);
         }
+    
+        // UPDATE: api/products/4/stock
+       [HttpPatch("{id}/stock")]
+       public ActionResult<Product> UpdateStock(int id, [FromBody] StockUpdateRequest stockUpdateRequest)
+       {
+            try
+            {
+                var product = _productService.UpdateStock(id,stockUpdateRequest.QuantityChange);
+                if(product is null)
+                {
+                    return NotFound(new {message=$"{id} id'li ürün bulunamadığı için stok güncellenemedi!"});
+                }
+                return Ok(
+                    new {
+                        productId = id,
+                        productName=product.Name,
+                        oldStock=product.Stock - stockUpdateRequest.QuantityChange,
+                        newStock=product.Stock,
+                        change=stockUpdateRequest.QuantityChange
+                    }
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new {message = $"Hata: {ex.Message}"});
+            }
+        } 
+    
+        // GET: api/products/3/stock-check?quantity=10
+        [HttpGet("{id}/stock-check")]
+        public ActionResult<object> CheckStock(int id, [FromQuery] int quantity)
+        {
+            var isAvaliable = _productService.CheckStockAvailability(id, quantity);
+            var product = _productService.GetById(id);
+            if (product is null)
+            {
+                return NotFound(new { message = $"{id} id'li ürün bulunamadığı için stok kontrolü yapılamadı!" });
+            }
+            return Ok(
+                new {
+                    productId=id,
+                    productName=product.Name,
+                    currentStock=product.Stock,
+                    requestedQuantity = quantity,
+                    isAvaliable = isAvaliable,
+                    message = isAvaliable ? "Stok Yeterli" : "Stok Yetersiz."
+                }
+            );
+        }
     }
 }
 
+
+// // POST: api/products
+// [HttpPost]
+// public async Task<ActionResult<Product>> Create()
+// {
+//     var jsonRequest = await new StreamReader(Request.Body).ReadToEndAsync();
+//     var product = JsonSerializer.Deserialize<Product>(jsonRequest);
+
+//     if (product is null)
+//     {
+//         return BadRequest(new { message = "Ürün bilgisi boş olamaz!" });
+//     }
+//     if (string.IsNullOrWhiteSpace(product.Name))
+//     {
+//         return BadRequest(new { message = "Ürün adı zorunludur!" });
+//     }
+//     if (product.Price <= 0)
+//     {
+//         return BadRequest(new { message = "Ürün fiyatı 0'dan büyük olmalıdır!" });
+//     }
+//     if (product.Stock < 0)
+//     {
+//         return BadRequest(new { message = "Stok miktarı negatif olamaz" });
+//     }
+//     var newProduct = _productService.Add(product);
+
+//     return CreatedAtRoute("GetProductById", new { id = newProduct.Id }, newProduct);
+// }
 
 
 
