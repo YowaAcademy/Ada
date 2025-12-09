@@ -19,9 +19,11 @@ public class ProductService : IProductService
         throw new NotImplementedException();
     }
 
-    public Task<bool> CheckStockAvailabilityAsync(int id, int requestedQuantity)
+    public async Task<bool> CheckStockAvailabilityAsync(int id, int requestedQuantity)
     {
-        throw new NotImplementedException();
+        var product = await _context.Products.FindAsync(id);
+        if (product is null) return false;
+        return product.Stock >= requestedQuantity;
     }
 
     public bool Delete(int id)
