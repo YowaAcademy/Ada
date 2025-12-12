@@ -1,0 +1,7 @@
+**/bin
+**/obj
+**/.git
+**/.vs
+**/.vscode
+**/README.MD
+**/neler-yapilabilir.MD

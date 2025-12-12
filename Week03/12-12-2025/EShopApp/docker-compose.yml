@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yowa_eshop_db
+    environment:
+      POSTGRES_USER: yowa_user
+      POSTGRES_PASSWORD: yowa_pass
+      POSTGRES_DB: yowa_eshop
+    ports:
+      - "5420:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yowa_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yowa_network
+
+  app:
+    build: 
+      context: .
+      dockerfile: dockerfile
+    container_name: yowa_eshop_app
+    ports:
+      - "5226:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__PostgreSqlConnection=Host=postgres;Port=5432;Database=yowa_eshop;Username=yowa_user;Password=yowa_pass
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - yowa_network
+
+volumes:
+  postgres_data:
+
+networks:
+  yowa_network:
+    driver: bridge
